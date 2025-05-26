@@ -1,8 +1,0 @@
-"0","legend(""bottomright"", "
-"0","       legend = c(paste0(""Logistic Regression (AUC: "", sprintf(""%.3f"", auc(lr_roc)), "")""),"
-"0","                  paste0(""Random Forest Tuned (AUC: "", sprintf(""%.3f"", auc(rf_roc)), "")""),"
-"0","                  paste0(""XGBoost Tuned (AUC: "", sprintf(""%.3f"", auc(xgb_roc)), "")"")"
-"0","       ),"
-"0","       col = c(""blue"", ""green"", ""red""), "
-"0","       lty = 1, lwd = 2, cex = 0.9)"
-"0",""

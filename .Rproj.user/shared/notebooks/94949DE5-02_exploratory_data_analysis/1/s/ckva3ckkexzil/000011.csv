@@ -1,6 +1,0 @@
-"0",""
-"0","cat(""\nTần suất Trình độ học vấn (EDUCATION):\n"") # 1=Graduate, 2=University, 3=HighSchool, 4=Others"
-"1","
-Tần suất Trình độ học vấn (EDUCATION):
-"
-"0","kable(as.data.frame(table(data_clean$EDUCATION)), col.names = c(""EDUCATION"", ""Tần suất""))"

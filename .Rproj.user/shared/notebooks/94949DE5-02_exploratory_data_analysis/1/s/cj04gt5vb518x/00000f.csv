@@ -1,6 +1,0 @@
-"0","t_test_limit_bal <- t.test(LIMIT_BAL ~ default.payment.next.month, data = data_clean)"
-"0",""
-"0","cat(""Kết quả t-test cho LIMIT_BAL theo tình trạng vỡ nợ:\n"")"
-"1","Kết quả t-test cho LIMIT_BAL theo tình trạng vỡ nợ:
-"
-"0","kable(tidy(t_test_limit_bal), caption = ""t-test: LIMIT_BAL vs. Default Status"", digits = 4)"

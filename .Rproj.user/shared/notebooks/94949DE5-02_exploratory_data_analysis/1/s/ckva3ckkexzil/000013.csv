@@ -1,6 +1,0 @@
-"0",""
-"0","cat(""\nTần suất Tình trạng hôn nhân (MARRIAGE):\n"") # 1=Married, 2=Single, 3=Others"
-"1","
-Tần suất Tình trạng hôn nhân (MARRIAGE):
-"
-"0","kable(as.data.frame(table(data_clean$MARRIAGE)), col.names = c(""MARRIAGE"", ""Tần suất""))"

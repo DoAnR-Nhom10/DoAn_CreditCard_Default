@@ -1,6 +1,0 @@
-"0","chi_test_education <- chisq.test(table(data_clean$EDUCATION, data_clean$default.payment.next.month))"
-"0",""
-"0","cat(""Kết quả Chi-squared test cho EDUCATION và tình trạng vỡ nợ:\n"")"
-"1","Kết quả Chi-squared test cho EDUCATION và tình trạng vỡ nợ:
-"
-"0","kable(tidy(chi_test_education), caption = ""Chi-squared test: EDUCATION vs. Default Status"", digits = 4)"

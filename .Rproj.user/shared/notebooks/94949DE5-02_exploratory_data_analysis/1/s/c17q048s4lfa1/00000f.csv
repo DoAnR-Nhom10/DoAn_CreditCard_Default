@@ -1,5 +1,0 @@
-"0","data_clean <- read.csv(OUTPUT_CLEAN_FILE, stringsAsFactors = FALSE)"
-"0","data_clean$EDUCATION <- as.factor(data_clean$EDUCATION)"
-"0","data_clean$MARRIAGE <- as.factor(data_clean$MARRIAGE)"
-"0","data_clean$SEX <- as.factor(data_clean$SEX)"
-"0","data_clean$default.payment.next.month <- as.factor(data_clean$default.payment.next.month)"
