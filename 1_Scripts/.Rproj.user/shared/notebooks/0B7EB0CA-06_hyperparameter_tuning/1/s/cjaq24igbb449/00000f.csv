@@ -1,0 +1,12 @@
+"0","# Finalize workflow với siêu tham số tốt nhất"
+"0","final_rf_workflow <- finalize_workflow(rf_workflow, best_rf_params)"
+"0",""
+"0","# Fit mô hình trên toàn bộ tập huấn luyện"
+"0","set.seed(123)"
+"0","final_rf_model <- fit(final_rf_workflow, data = train_data_original)"
+"0",""
+"0","# Lưu mô hình"
+"0","saveRDS(final_rf_model, paste0(MODELS_DIR, ""random_forest_tuned_final.rds""))"
+"0","cat(""Đã lưu mô hình Random Forest tinh chỉnh vào:"", paste0(MODELS_DIR, ""random_forest_tuned_final.rds""), ""\n"")"
+"1","Đã lưu mô hình Random Forest tinh chỉnh vào: ../2_Models/random_forest_tuned_final.rds 
+"

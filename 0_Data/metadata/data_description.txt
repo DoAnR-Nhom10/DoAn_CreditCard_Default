@@ -1,0 +1,120 @@
+Mô tả Tập dữ liệu UCI Credit Card Default
+======================================
+
+Tổng quan về Tập dữ liệu
+------------------------
+Tập dữ liệu UCI Credit Card Default chứa thông tin về các khách hàng sử dụng thẻ tín dụng tại Đài Loan, được thu thập từ tháng 4 năm 2005 đến tháng 9 năm 2005. Tập dữ liệu được sử dụng để dự đoán khả năng khách hàng không thanh toán đúng hạn khoản thanh toán thẻ tín dụng trong tháng tiếp theo. Nó bao gồm thông tin nhân khẩu học, dữ liệu tín dụng, lịch sử thanh toán và sao kê hóa đơn cho 30.000 khách hàng.
+
+Nguồn gốc
+---------
+Tập dữ liệu được lấy từ UCI Machine Learning Repository:
+- Tên: Default of Credit Card Clients Dataset
+- Nguồn: https://archive.ics.uci.edu/ml/datasets/default+of+credit+card+clients
+- Nghiên cứu gốc: Yeh, I. C., & Lien, C. H. (2009). The comparisons of data mining techniques for the predictive accuracy of probability of default of credit card clients. Expert Systems with Applications, 36(2), 2473-2480.
+
+Chi tiết Tập dữ liệu
+--------------------
+- Số lượng bản ghi: 30.000
+- Số lượng thuộc tính: 25 (bao gồm biến mục tiêu)
+- Biến mục tiêu: default.payment.next.month (nhị phân: 0 = không vỡ nợ, 1 = vỡ nợ)
+- Ghi chú: Không có giá trị thiếu được báo cáo rõ ràng, nhưng cần làm sạch dữ liệu để xử lý các giá trị bất thường hoặc không nhất quán.
+
+Mô tả các Cột
+-------------
+Dưới đây là mô tả chi tiết của từng cột trong tập dữ liệu UCI_Credit_Card.csv:
+
+1. ID
+   - Mô tả: Định danh duy nhất cho mỗi khách hàng.
+   - Kiểu dữ liệu: Số nguyên
+   - Phạm vi: 1 đến 30.000
+   - Ghi chú: Được sử dụng để phân biệt các bản ghi; không sử dụng làm đặc trưng trong mô hình.
+
+2. LIMIT_BAL
+   - Mô tả: Hạn mức tín dụng được cấp cho khách hàng (tính bằng Đô la Đài Loan mới, NT$), bao gồm tín dụng cá nhân và tín dụng gia đình/bổ sung.
+   - Kiểu dữ liệu: Số thực
+   - Phạm vi: 10.000 đến 1.000.000
+   - Ghi chú: Thể hiện hạn mức tín dụng được cấp cho khách hàng.
+
+3. SEX
+   - Mô tả: Giới tính của khách hàng.
+   - Kiểu dữ liệu: Phân loại (mã hóa bằng số nguyên)
+   - Giá trị:
+     - 1: Nam
+     - 2: Nữ
+   - Ghi chú: Được sử dụng như một đặc trưng nhân khẩu học.
+
+4. EDUCATION
+   - Mô tả: Trình độ học vấn của khách hàng.
+   - Kiểu dữ liệu: Phân loại (mã hóa bằng số nguyên)
+   - Giá trị:
+     - 1: Sau đại học
+     - 2: Đại học
+     - 3: Trung học
+     - 4: Khác
+     - 5: Không xác định
+     - 6: Không xác định
+   - Ghi chú: Các danh mục 5 và 6 không được ghi nhận rõ ràng trong tài liệu nhưng xuất hiện trong tập dữ liệu; có thể cần gộp hoặc làm sạch trong quá trình tiền xử lý.
+
+5. MARRIAGE
+   - Mô tả: Tình trạng hôn nhân của khách hàng.
+   - Kiểu dữ liệu: Phân loại (mã hóa bằng số nguyên)
+   - Giá trị:
+     - 1: Đã kết hôn
+     - 2: Độc thân
+     - 3: Khác (ví dụ: ly hôn, góa)
+   - Ghi chú: Được sử dụng như một đặc trưng nhân khẩu học; danh mục "Khác" có thể bao gồm các trạng thái không được định nghĩa rõ ràng.
+
+6. AGE
+   - Mô tả: Tuổi của khách hàng (tính bằng năm).
+   - Kiểu dữ liệu: Số nguyên
+   - Phạm vi: 21 đến 79
+   - Ghi chú: Thể hiện tuổi của khách hàng tại thời điểm thu thập dữ liệu.
+
+7. PAY_0, PAY_2, PAY_3, PAY_4, PAY_5, PAY_6
+   - Mô tả: Tình trạng thanh toán trong 6 tháng gần nhất (PAY_0 = tháng 9/2005, PAY_2 = tháng 8/2005, ..., PAY_6 = tháng 4/2005).
+   - Kiểu dữ liệu: Số nguyên
+   - Giá trị:
+     - -2: Không tiêu dùng
+     - -1: Thanh toán đầy đủ
+     - 0: Sử dụng tín dụng xoay vòng (thanh toán số tiền tối thiểu)
+     - 1: Trễ thanh toán 1 tháng
+     - 2: Trễ thanh toán 2 tháng
+     - ...
+     - 9: Trễ thanh toán 9 tháng trở lên
+   - Ghi chú: PAY_0 là tháng gần nhất. Giá trị âm biểu thị thanh toán sớm hoặc đầy đủ, giá trị dương biểu thị thanh toán trễ.
+
+8. BILL_AMT1, BILL_AMT2, BILL_AMT3, BILL_AMT4, BILL_AMT5, BILL_AMT6
+   - Mô tả: Số tiền trên sao kê hóa đơn (tính bằng NT$) trong 6 tháng gần nhất (BILL_AMT1 = tháng 9/2005, BILL_AMT2 = tháng 8/2005, ..., BILL_AMT6 = tháng 4/2005).
+   - Kiểu dữ liệu: Số thực
+   - Phạm vi: Có thể âm (ví dụ: thanh toán dư) hoặc dương
+   - Ghi chú: Thể hiện số tiền được lập hóa đơn cho khách hàng trong tháng tương ứng.
+
+9. PAY_AMT1, PAY_AMT2, PAY_AMT3, PAY_AMT4, PAY_AMT5, PAY_AMT6
+   - Mô tả: Số tiền khách hàng đã thanh toán (tính bằng NT$) trong 6 tháng gần nhất (PAY_AMT1 = tháng 9/2005, PAY_AMT2 = tháng 8/2005, ..., PAY_AMT6 = tháng 4/2005).
+   - Kiểu dữ liệu: Số thực
+   - Phạm vi: Không âm (0 hoặc lớn hơn)
+   - Ghi chú: Thể hiện số tiền thực tế khách hàng đã thanh toán cho hóa đơn trong tháng tương ứng.
+
+10. default.payment.next.month
+    - Mô tả: Biến mục tiêu biểu thị liệu khách hàng có vỡ nợ khoản thanh toán thẻ tín dụng trong tháng tiếp theo (tháng 10/2005) hay không.
+    - Kiểu dữ liệu: Nhị phân (số nguyên)
+    - Giá trị:
+      - 0: Không vỡ nợ (khách hàng thanh toán đúng hạn)
+      - 1: Vỡ nợ (khách hàng không thanh toán đúng hạn)
+    - Ghi chú: Đây là biến kết quả cần dự đoán trong bài toán dự đoán vỡ nợ tín dụng.
+
+Ghi chú bổ sung
+---------------
+- Tập dữ liệu bị mất cân bằng, với tỷ lệ các trường hợp không vỡ nợ (0) cao hơn nhiều so với trường hợp vỡ nợ (1). Điều này có thể yêu cầu các kỹ thuật như lấy mẫu lại (oversampling, undersampling) hoặc mô hình có trọng số lớp trong quá trình phân tích.
+- Các giá trị bất thường và không nhất quán (ví dụ: số tiền hóa đơn âm, các danh mục EDUCATION không được ghi nhận) cần được kiểm tra trong quá trình tiền xử lý.
+- Tập dữ liệu phù hợp cho bài toán phân loại nhị phân, với các ứng dụng tiềm năng trong các mô hình hồi quy logistic, rừng ngẫu nhiên (Random Forest) và mô hình tăng cường độ dốc (gradient boosting như XGBoost).
+
+Sử dụng trong Dự án
+------------------
+Tập dữ liệu này được sử dụng trong dự án "DoAn_CreditCard_Default_Prediction" để:
+- Phân tích dữ liệu thăm dò (EDA) nhằm hiểu mối quan hệ giữa các đặc trưng và biến mục tiêu.
+- Kỹ thuật đặc trưng để tạo các biến mới (ví dụ: tỷ lệ thanh toán so với hóa đơn, độ trễ thanh toán trung bình).
+- Huấn luyện và đánh giá các mô hình học máy (Hồi quy Logistic, Rừng Ngẫu nhiên, XGBoost) để dự đoán vỡ nợ tín dụng.
+- Tạo ra các hiểu biết và hình ảnh hóa được lưu trong thư mục 3_Results/.
+
+Để biết thêm chi tiết về cấu trúc dự án và phương pháp, vui lòng tham khảo file README.md trong thư mục gốc của dự án.

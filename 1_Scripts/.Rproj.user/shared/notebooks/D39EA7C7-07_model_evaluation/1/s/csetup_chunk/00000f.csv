@@ -1,0 +1,36 @@
+"0","knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')"
+"0","source(""00_setup_environment.R"")"
+"1","Môi trường đã được thiết lập thành công!
+"
+"0","library(tidymodels)"
+"0","library(pROC)"
+"0","library(caret)"
+"0","library(vip)"
+"2","Warning :package ‘vip’ was built under R version 4.4.3
+"
+"2","G3;
+Attaching package: ‘vip’
+
+g"
+"2","G3;The following object is masked from ‘package:utils’:
+
+    vi
+
+g"
+"0","library(ggplot2)"
+"0","library(patchwork)"
+"2","Warning :package ‘patchwork’ was built under R version 4.4.3
+"
+"0","library(dplyr)"
+"0","library(kableExtra)"
+"2","Warning :package ‘kableExtra’ was built under R version 4.4.3
+"
+"2","G3;
+Attaching package: ‘kableExtra’
+
+g"
+"2","G3;The following object is masked from ‘package:dplyr’:
+
+    group_rows
+
+g"

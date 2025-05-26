@@ -1,0 +1,8 @@
+"0",""
+"0","# Chọn mô hình tốt nhất"
+"0","best_xgb_params <- select_best(xgb_tune_results, metric = ""roc_auc"")"
+"0","cat(""\nSiêu tham số tốt nhất cho XGBoost:\n"")"
+"1","
+Siêu tham số tốt nhất cho XGBoost:
+"
+"0","print(best_xgb_params)"

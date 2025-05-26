@@ -1,0 +1,8 @@
+"0",""
+"0","# Chọn mô hình tốt nhất"
+"0","best_rf_params <- select_best(rf_tune_results, metric = ""roc_auc"")"
+"0","cat(""\nSiêu tham số tốt nhất cho Random Forest:\n"")"
+"1","
+Siêu tham số tốt nhất cho Random Forest:
+"
+"0","print(best_rf_params)"

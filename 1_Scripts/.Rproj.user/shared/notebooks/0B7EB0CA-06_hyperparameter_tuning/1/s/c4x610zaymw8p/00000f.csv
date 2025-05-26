@@ -1,0 +1,27 @@
+"0","set.seed(123)"
+"0","main_recipe <- recipe(default.payment.next.month ~ ., data = train_data_original) %>%"
+"0","  step_rm(any_of(c(""ID""))) %>% # Loại bỏ cột ID nếu có"
+"0","  step_novel(all_nominal_predictors(), -all_outcomes()) %>% # Xử lý các level mới trong test"
+"0","  step_dummy(all_nominal_predictors(), -all_outcomes(), one_hot = TRUE) %>% # One-hot encoding"
+"0","  step_zv(all_predictors()) %>% # Loại bỏ các biến có variance bằng 0"
+"0","  step_normalize(all_numeric_predictors()) %>% # Chuẩn hóa các biến số"
+"0","  step_smote(default.payment.next.month, over_ratio = 1) # Cân bằng dữ liệu bằng SMOTE"
+"0",""
+"0","# Kiểm tra recipe bằng cách prep và bake trên train_data"
+"0","train_data_balanced_check <- main_recipe %>%"
+"0","  prep() %>%"
+"0","  bake(new_data = NULL)"
+"0",""
+"0","cat(""Tỷ lệ default.payment.next.month sau SMOTE (kiểm tra):\n"")"
+"1","Tỷ lệ default.payment.next.month sau SMOTE (kiểm tra):
+"
+"0","print(table(train_data_balanced_check$default.payment.next.month))"
+"1","
+    0     1 
+18691 18691 
+"
+"0","print(prop.table(table(train_data_balanced_check$default.payment.next.month)))"
+"1","
+  0   1 
+0.5 0.5 
+"

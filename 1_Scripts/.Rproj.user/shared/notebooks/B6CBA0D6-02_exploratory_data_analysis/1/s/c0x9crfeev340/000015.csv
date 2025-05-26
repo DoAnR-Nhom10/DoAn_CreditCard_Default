@@ -1,0 +1,7 @@
+"0",""
+"0","cat(""\nTỷ lệ vỡ nợ (default.payment.next.month):\n"") # 0=No, 1=Yes"
+"1","
+Tỷ lệ vỡ nợ (default.payment.next.month):
+"
+"0","kable(as.data.frame(prop.table(table(data_clean$default.payment.next.month))), "
+"0","      col.names = c(""Vỡ nợ"", ""Tỷ lệ""), digits = 3)"

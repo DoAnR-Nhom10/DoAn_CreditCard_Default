@@ -1,0 +1,4 @@
+"0","cat(""Tần suất Giới tính (SEX):\n"") # 1=Male, 2=Female"
+"1","Tần suất Giới tính (SEX):
+"
+"0","kable(as.data.frame(table(data_clean$SEX)), col.names = c(""SEX"", ""Tần suất""))"

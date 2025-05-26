@@ -1,0 +1,26 @@
+{
+    "id": "43C5B95B",
+    "path": "D:/Documents/Lập Trình R Cho Phân Tích Dữ Liệu/DoAn_CreditCard_Default/1_Scripts/00_setup_environment.R",
+    "project_path": "00_setup_environment.R",
+    "type": "r_source",
+    "hash": "180742721",
+    "contents": "",
+    "dirty": false,
+    "created": 1748011291678.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "8,22",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1747968356,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1747968356,
+    "read_only": false,
+    "read_only_alternatives": []
+}

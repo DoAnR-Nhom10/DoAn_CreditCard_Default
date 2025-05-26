@@ -1,0 +1,13 @@
+"1","NULL
+"
+"0","print_cm(cm_xgb, ""XGBoost (Tuned)"")"
+"1","
+Ma trận nhầm lẫn cho: XGBoost (Tuned) 
+ Accuracy: 0.6233 
+ Kappa: -0.1035 
+ Sensitivity (Recall for class 1): 0.1364 
+ Specificity (Recall for class 0): 0.7607 
+ Precision (for class 1): 0.1385 
+ F1-Score (for class 1): 0.1374 
+ Balanced Accuracy: 0.4485 
+"

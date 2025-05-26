@@ -1,0 +1,27 @@
+{
+    "id": "62C2F2D5",
+    "path": "D:/Documents/Lập Trình R Cho Phân Tích Dữ Liệu/DoAn_CreditCard_Default/1_Scripts/02_exploratory_data_analysis.Rmd",
+    "project_path": "02_exploratory_data_analysis.Rmd",
+    "type": "r_markdown",
+    "hash": "2933985255",
+    "contents": "",
+    "dirty": false,
+    "created": 1748011349367.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "last_setup_crc32": "ead3db5c54b4a975",
+        "cursorPosition": "4,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1747934755,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1748049709856,
+    "read_only": false,
+    "read_only_alternatives": []
+}

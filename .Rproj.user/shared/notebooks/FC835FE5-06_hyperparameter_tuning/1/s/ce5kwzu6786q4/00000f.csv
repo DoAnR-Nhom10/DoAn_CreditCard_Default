@@ -1,0 +1,3 @@
+"0","# Sử dụng ggplot2 để vẽ đẹp hơn nếu muốn, ở đây dùng plot cơ bản"
+"0","png(paste0(RESULTS_DIR, ""model_performance/roc_curves_tuned_comparison.png""), width = 800, height = 600)"
+"0","plot(lr_roc, col = ""blue"", main = ""So sánh ROC Curves (Mô hình đã Tinh chỉnh)"", legacy.axes = TRUE)"

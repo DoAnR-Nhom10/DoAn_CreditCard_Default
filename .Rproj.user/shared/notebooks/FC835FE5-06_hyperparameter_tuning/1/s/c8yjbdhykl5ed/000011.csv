@@ -1,0 +1,10 @@
+"0",""
+"0","# Lưu bảng tổng hợp"
+"0","write.csv(performance_summary_tuned, "
+"0","          paste0(RESULTS_DIR, ""model_performance/performance_metrics_tuned_summary.csv""), "
+"0","          row.names = FALSE)"
+"0","cat(""\nĐã lưu bảng tổng hợp hiệu suất vào:"", "
+"0","    paste0(RESULTS_DIR, ""model_performance/performance_metrics_tuned_summary.csv""), ""\n"")"
+"1","
+Đã lưu bảng tổng hợp hiệu suất vào: ../3_Results/model_performance/performance_metrics_tuned_summary.csv 
+"

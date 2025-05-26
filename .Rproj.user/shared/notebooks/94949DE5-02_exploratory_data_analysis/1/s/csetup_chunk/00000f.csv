@@ -1,0 +1,9 @@
+"0","knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)"
+"0","source(""00_setup_environment.R"")"
+"1","Môi trường đã được thiết lập thành công!
+"
+"0","library(tidyverse)"
+"0","library(gridExtra)"
+"0","library(corrplot)"
+"0","library(knitr)     # For kable"
+"0","library(broom)     # For tidy t.test and chisq.test"

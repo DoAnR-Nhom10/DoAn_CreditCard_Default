@@ -1,0 +1,280 @@
+```yaml
+---
+title: "Phân tích dữ liệu và xây dựng mô hình dự đoán rủi ro vỡ nợ của khách hàng sử dụng thẻ tín dụng"
+author: "Nhóm 10: Nguyễn Phước Biên, Nguyễn Tấn Thành, Vương Quyền, Châu Gia Huy"
+github: "https://github.com/DoanR-Nhom10/Do-An-R"
+date: "2023-12-31"
+output:
+  word_document:
+    toc: true
+    toc_depth: 3
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    toc_float: true
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    latex_engine: xelatex
+    includes:
+      in_header: preamble.tex
+---
+
+```{r setup, include=FALSE}
+# Cài đặt và nạp pacman nếu chưa có
+if (!require("pacman")) install.packages("pacman")
+
+# Sử dụng pacman để nạp các gói
+pacman::p_load(
+  dplyr, tidyr, ggplot2, corrplot, plotly, caret, randomForest, xgboost,
+  pROC, yardstick, fastDummies, recipes, knitr, kableExtra
+)
+
+# Thiết lập tùy chọn chung
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center"
+)
+set.seed(123)
+```
+
+# 1. Tóm tắt (Abstract)
+
+Dự án này sử dụng ngôn ngữ R để phân tích và dự đoán rủi ro vỡ nợ của khách hàng dựa trên bộ dữ liệu `UCI_Credit_Card.csv` từ Kaggle. Bộ dữ liệu chứa thông tin về 30,000 khách hàng thẻ tín dụng tại Đài Loan, bao gồm nhân khẩu học, hạn mức tín dụng, lịch sử thanh toán, và tình trạng vỡ nợ. Sau khi tiền xử lý và phân tích dữ liệu khám phá (EDA), ba mô hình học máy được xây dựng: Hồi quy Logistic, Random Forest và XGBoost. Kết quả cho thấy các yếu tố như lịch sử thanh toán trễ (`PAY_0`, `PAY_2`), hạn mức tín dụng (`LIMIT_BAL`), và tỷ lệ sử dụng tín dụng (`CREDIT_UTILIZATION`) có ảnh hưởng mạnh đến rủi ro vỡ nợ. Random Forest đạt hiệu suất cao nhất (Accuracy ~0.7765, AUC-ROC ~0.7703), cung cấp giá trị thực tiễn cho các tổ chức tài chính trong quản lý rủi ro tín dụng.
+
+# 2. Giới thiệu (Introduction)
+
+Dự đoán khả năng trả nợ của khách hàng là bài toán quan trọng trong ngành tài chính-ngân hàng, giúp giảm thiểu rủi ro tín dụng và tối ưu hóa quy trình phê duyệt khoản vay. Với sự phát triển của khoa học dữ liệu, các phương pháp học máy trở thành công cụ mạnh mẽ để giải quyết thách thức này. Ngôn ngữ R, với các thư viện như `dplyr`, `ggplot2`, và `caret`, cung cấp nền tảng lý tưởng để phân tích dữ liệu tín dụng.
+
+Dự án này tập trung vào phân tích bộ dữ liệu `UCI_Credit_Card.csv`, nhằm:
+
+- Xử lý và chuẩn hóa dữ liệu để phù hợp với mô hình học máy.
+- Phân tích khám phá để xác định các yếu tố ảnh hưởng đến rủi ro vỡ nợ.
+- Xây dựng và đánh giá ba mô hình dự đoán: Hồi quy Logistic, Random Forest, và XGBoost.
+
+# 3. Dữ liệu (Data)
+
+## 3.1 Nguồn dữ liệu
+
+- **Tập dữ liệu**: `UCI_Credit_Card.csv`
+- **Nguồn**: Kaggle
+- **Tham khảo**: Yeh, I. C., & Lien, C. H. (2009). *Expert Systems with Applications, 36*(2), 2473-2480.
+
+```{r data-loading, echo=FALSE}
+data <- readRDS("../0_Data/processed/clean_default.rds")
+cat("Bộ dữ liệu có", nrow(data), "quan sát và", ncol(data), "biến.\n")
+```
+
+## 3.2 Mô tả dữ liệu
+
+Bộ dữ liệu chứa 30,000 quan sát với 25 biến, bao gồm:
+
+- **Nhân khẩu học**: `SEX`, `EDUCATION`, `MARRIAGE`, `AGE`.
+- **Tín dụng**: `LIMIT_BAL`, `PAY_0` đến `PAY_6`, `BILL_AMT1` đến `BILL_AMT6`, `PAY_AMT1` đến `PAY_AMT6`.
+- **Mục tiêu**: `default.payment.next.month` (0 = Không vỡ nợ, 1 = Vỡ nợ).
+
+```{r data-glimpse, echo=FALSE}
+glimpse(data)
+```
+
+## 3.3 Tiền xử lý dữ liệu
+
+### 3.3.1 Làm sạch dữ liệu
+
+- **Giá trị thiếu**: Không có NA trong dữ liệu (`colSums(is.na(data))`).
+- **Giá trị bất thường**:
+  - `EDUCATION`: Gộp giá trị 0, 5, 6 vào 4 (Khác).
+  - `MARRIAGE`: Gộp giá trị 0 vào 3 (Khác).
+  - `BILL_AMT*`: Giữ giá trị âm (do hoàn tiền).
+
+### 3.3.2 Chuẩn hóa dữ liệu
+
+- **Biến phân loại**: Chuyển `SEX`, `EDUCATION`, `MARRIAGE`, `Default` thành `factor`.
+- **Biến số**: Chuẩn hóa z-score cho `LIMIT_BAL`, `BILL_AMT*`, `PAY_AMT*`.
+
+### 3.3.3 Kỹ thuật đặc trưng
+
+- **One-hot encoding**: Áp dụng cho `SEX`, `EDUCATION`, `MARRIAGE` bằng `fastDummies`.
+- **Đặc trưng mới**: `CREDIT_UTILIZATION`, `TOTAL_DELAY`, `AVG_BILL`, `AVG_PAY`.
+
+```{r preprocessing-example, eval=FALSE}
+data_processed <- data %>%
+  rename(Default = default.payment.next.month, Age = AGE) %>%
+  mutate(
+    EDUCATION = case_when(EDUCATION %in% c(0, 5, 6) ~ 4, TRUE ~ EDUCATION),
+    MARRIAGE = case_when(MARRIAGE == 0 ~ 3, TRUE ~ MARRIAGE)
+  ) %>%
+  mutate(across(c(SEX, EDUCATION, MARRIAGE, Default), as.factor)) %>%
+  fastDummies::dummy_cols(select_columns = c("SEX", "EDUCATION", "MARRIAGE")) %>%
+  mutate(across(c(LIMIT_BAL, starts_with("BILL_AMT"), starts_with("PAY_AMT")), scale))
+write.csv(data_processed, "0_Data/processed/clean_default.csv", row.names = FALSE)
+```
+
+### 3.3.4 Xử lý mất cân bằng
+
+- **Tỷ lệ lớp**: 77.88% không vỡ nợ, 22.12% vỡ nợ.
+- **Phương pháp**: SMOTE tăng lớp thiểu số lên ~50:50, sử dụng `scale_pos_weight` trong XGBoost.
+
+## 3.4 Thống kê mô tả
+
+```{r descriptive-stats, echo=FALSE}
+summary_table <- read.csv("3_Results/model_performance/performance_metrics_summary.csv")
+knitr::kable(summary_table, caption = "Thống kê mô tả các biến chính") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE)
+```
+
+# 4. Trực quan hóa dữ liệu (Data Visualization / EDA)
+
+## 4.1 Phân tích đơn biến
+
+### 4.1.1 Biến phân loại
+
+```{r categorical-dist, fig.cap="Phân phối SEX, EDUCATION, MARRIAGE", out.width="100%"}
+knitr::include_graphics("3_Results/eda_plots/univariate_categorical.png")
+```
+
+- **SEX**: Nữ (~60%) chiếm ưu thế.
+- **EDUCATION**: Đại học (~46.7%) cao nhất.
+- **MARRIAGE**: Độc thân (~53.2%) nhiều hơn đã kết hôn.
+
+### 4.1.2 Biến số lượng
+
+```{r histogram, fig.cap="Phân phối LIMIT_BAL và AGE", out.width="100%"}
+knitr::include_graphics("3_Results/eda_plots/eda_summary_plots.png")
+```
+
+- **LIMIT_BAL**: Lệch phải, tập trung 50,000-200,000 TWD.
+- **AGE**: Tập trung 25-40 tuổi.
+
+## 4.2 Phân tích đa biến
+
+### 4.2.1 Boxplot LIMIT_BAL theo Default
+
+```{r boxplot, fig.cap="LIMIT_BAL theo Default", out.width="70%"}
+knitr::include_graphics("3_Results/eda_plots/bivariate_numeric_target.png")
+```
+
+Khách hàng vỡ nợ có hạn mức thấp hơn.
+
+### 4.2.2 Ma trận tương quan
+
+```{r correlation, fig.cap="Ma trận tương quan", out.width="80%"}
+knitr::include_graphics("3_Results/eda_plots/correlation_matrix.png")
+```
+
+- Tương quan mạnh giữa `PAY_*` và `Default`.
+- `LIMIT_BAL` tương quan âm với `Default`.
+
+# 5. Mô hình hóa dữ liệu (Data Modeling)
+
+## 5.1 Giới thiệu các mô hình
+
+- **Hồi quy Logistic**: Dự đoán xác suất vỡ nợ (phân loại).
+- **Random Forest**: Phân loại với khả năng nắm bắt phi tuyến.
+- **XGBoost**: Tăng cường hiệu suất dự đoán với boosting.
+
+## 5.2 Mô hình 1: Hồi quy Logistic
+
+- **Phương pháp**: Sử dụng `glm(family = binomial)`.
+- **Đặc trưng**: `PAY_0`, `PAY_2`, `LIMIT_BAL` quan trọng.
+
+## 5.3 Mô hình 2: Random Forest
+
+- **Phương pháp**: `randomForest` với `ntree=500`, tinh chỉnh `mtry`.
+
+## 5.4 Mô hình 3: XGBoost
+
+- **Phương pháp**: `xgboost` với `scale_pos_weight`, tinh chỉnh `eta`, `max_depth`.
+
+# 6. Thực nghiệm, kết quả và thảo luận (Experiments, Results, and Discussion)
+
+## 6.1 Kết quả mô hình
+
+### 6.1.1 Hiệu suất mô hình
+
+```{r model-performance, fig.cap="Đường cong ROC và PR", out.width="100%"}
+knitr::include_graphics(c("3_Results/model_performance/roc_curves_comparison.png",
+                         "3_Results/model_performance/pr_curves_comparison.png"))
+```
+
+```{r performance-table, echo=FALSE}
+performance_data <- data.frame(
+  `Mô hình` = c("Hồi quy Logistic", "Random Forest", "XGBoost"),
+  Accuracy = c(0.6714, 0.7765, 0.7569),
+  `Precision (Lớp 1)` = c(0.3692, 0.4959, 0.4534),
+  `Recall (Lớp 1)` = c(0.6845, 0.5851, 0.4804),
+  `F1-Score (Lớp 1)` = c(0.4797, 0.5368, 0.4665),
+  `AUC-ROC` = c(0.7341, 0.7703, 0.7170),
+  `AUC-PR` = c(0.6485, 0.6375, 0.6575)
+)
+knitr::kable(performance_data, caption = "Hiệu suất mô hình trên tập kiểm tra") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE)
+```
+
+### 6.1.2 Độ quan trọng đặc trưng
+
+```{r feature-importance, fig.cap="Độ quan trọng đặc trưng", out.width="80%"}
+knitr::include_graphics(c("3_Results/feature_importance/rf_feature_importance.png",
+                         "3_Results/feature_importance/xgb_feature_importance.png"))
+```
+
+- **Random Forest**: `PAY_0`, `PAY_2`, `LIMIT_BAL`, `CREDIT_UTILIZATION`.
+- **XGBoost**: `PAY_0`, `PAY_2`, `LIMIT_BAL`, `BILL_AMT1`.
+
+## 6.2 Thảo luận
+
+- **Ưu điểm**: Dữ liệu chất lượng, quy trình khoa học, Random Forest hiệu quả.
+- **Hạn chế**: Mất cân bằng dữ liệu, nguy cơ overfitting, Hồi quy Logistic hạn chế với phi tuyến.
+- **Ý nghĩa thực tiễn**: Random Forest phù hợp cho hệ thống tự động, Hồi quy Logistic hỗ trợ giải thích.
+
+# 7. Kết luận (Conclusions)
+
+## 7.1 Tóm tắt kết quả
+
+Dự án đã xây dựng quy trình phân tích toàn diện, xác định các yếu tố chính như `PAY_0`, `PAY_2`, `LIMIT_BAL` ảnh hưởng đến rủi ro vỡ nợ. Random Forest đạt hiệu suất tốt nhất (Accuracy ~0.7765, AUC-ROC ~0.7703).
+
+## 7.2 Ý nghĩa và đề xuất
+
+- **Quản lý rủi ro**: Sử dụng mô hình để sàng lọc hồ sơ vay.
+- **Chính sách tín dụng**: Điều chỉnh hạn mức dựa trên lịch sử thanh toán.
+- **Hệ thống tự động**: Triển khai Random Forest cho đánh giá tín dụng.
+
+## 7.3 Hướng phát triển
+
+- Thử nghiệm học sâu hoặc mô hình ensemble khác.
+- Tích hợp dữ liệu giao dịch thời gian thực.
+- Phân tích hành vi khách hàng chi tiết hơn.
+
+# 8. Phụ lục (Appendices)
+
+GitHub: <https://github.com/DoanR-Nhom10/Do-An-R>
+
+# 9. Đóng góp (Contributions)
+
+```{r contributions-table, echo=FALSE}
+contributions_data <- data.frame(
+  `Họ và tên` = c("Nguyễn Phước Biên", "Nguyễn Tấn Thành", "Vương Quyền", "Châu Gia Huy"),
+  MSSV = c("23133074", "23133068", "23133029", "23133026"),
+  `Nhiệm vụ` = c("Trực quan hóa, Hồi quy Logistic, chuẩn bị slide, kiểm tra báo cáo",
+                 "Random Forest, XGBoost, viết báo cáo",
+                 "Tiền xử lý dữ liệu, slide lý thuyết thống kê",
+                 "Phân tích đơn biến, đa biến, hỗ trợ trực quan hóa"),
+  `Mức độ hoàn thành` = rep("100%", 4),
+  `Điểm đánh giá` = rep(10, 4)
+)
+knitr::kable(contributions_data, caption = "Phân công và đánh giá đóng góp") %>%
+  kable_styling(bootstrap_options = "striped", full_width = TRUE)
+```
+
+# 10. Tham khảo (References)
+
+- Yeh, I. C., & Lien, C. H. (2009). *Expert Systems with Applications, 36*(2), 2473-2480.
+- Kaggle. (2016). UCI Credit Card Dataset. <https://www.kaggle.com/datasets/uciml/default-of-credit-card-clients-dataset>
+- Wickham, H., et al. (2019). *Journal of Open Source Software, 4*(43), 1686.
+- Kuhn, M. (2008). *Journal of Statistical Software, 28*(5), 1-26.
+- Tài liệu môn học "Lập trình R cho phân tích" (HCMUTE).
+```

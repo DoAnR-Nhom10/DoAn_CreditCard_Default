@@ -1,0 +1,27 @@
+{
+    "id": "8CCA31DC",
+    "path": "D:/Documents/Lập Trình R Cho Phân Tích Dữ Liệu/DoAn_CreditCard_Default/1_Scripts/06_hyperparameter_tuning.Rmd",
+    "project_path": "06_hyperparameter_tuning.Rmd",
+    "type": "r_markdown",
+    "hash": "1667725493",
+    "contents": "",
+    "dirty": false,
+    "created": 1748015687189.0,
+    "source_on_save": false,
+    "relative_order": 7,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "215,25",
+        "scrollLine": "203",
+        "last_setup_crc32": "ead3db5c2c0c3dbd"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1748049619,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1748054411938,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,4 @@
+"Model","Accuracy","Precision_Class1","Recall_Class1","F1_Score_Class1","Specificity_Class0","Balanced_Accuracy","AUC_ROC","AUC_PR"
+"Logistic Regression",0.6714,0.3692,0.6845,0.4797,0.6677,0.6761,0.7341,0.6485
+"Random Forest (Tuned)",0.7765,0.4959,0.5851,0.5368,0.8309,0.708,0.7703,0.6375
+"XGBoost (Tuned)",0.7569,0.4534,0.4804,0.4665,0.8354,0.6579,0.717,0.6575

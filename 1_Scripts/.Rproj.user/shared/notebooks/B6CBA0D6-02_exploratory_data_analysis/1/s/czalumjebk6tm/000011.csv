@@ -1,0 +1,6 @@
+"0","dev.off()"
+"1","null device 
+          1 
+"
+"0","corrplot(corr_matrix, method = ""color"", type = ""upper"", order = ""hclust"","
+"0","          addCoef.col = ""black"", tl.col = ""black"", tl.srt = 45, diag = FALSE, number.cex = 0.7)"

@@ -1,0 +1,352 @@
+---
+title: "Tinh chỉnh Siêu tham số cho Random Forest và XGBoost"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("00_setup_environment.R")
+library(tidymodels)
+library(themis)      # Cho SMOTE
+library(randomForest)
+library(xgboost)
+library(caret)       # Để so sánh với các mô hình trước đó
+library(fastDummies) # Cho dummy_cols
+library(pROC)        # Cho roc_auc
+library(knitr) 
+```
+
+## Mục tiêu
+
+Tinh chỉnh siêu tham số cho hai mô hình Random Forest và XGBoost để tối ưu hóa hiệu suất dự đoán thẻ tín dụng bị vỡ nợ. Chúng tôi sẽ sử dụng `tidymodels` để thực hiện Tìm kiếm Lưới (Grid Search) và Tìm kiếm Ngẫu nhiên (Random Search), với số liệu ưu tiên là ROC-AUC trên xác thực chéo 5 lần. Mô hình Logistic Regression không được tinh chỉnh vì có ít siêu tham số.
+
+## Đọc dữ liệu
+
+Đọc dữ liệu huấn luyện đã được xử lý theo bước tính năng kỹ thuật và cân bằng bằng SMOTE.
+
+```{r load-data}
+# Đọc dữ liệu huấn luyện và kiểm tra
+train_data_original <- readRDS(paste0(PROCESSED_DIR, "train_data.rds"))
+test_data_original <- readRDS(paste0(PROCESSED_DIR, "test_data.rds"))
+
+# Đảm bảo biến mục tiêu là factor
+train_data_original$default.payment.next.month <- as.factor(train_data_original$default.payment.next.month)
+if (!is.null(test_data_original$default.payment.next.month)) {
+    test_data_original$default.payment.next.month <- as.factor(test_data_original$default.payment.next.month)
+}
+
+# Kiểm tra cấu trúc dữ liệu
+cat("Cấu trúc train_data_original:\n")
+str(train_data_original)
+cat("Cấu trúc test_data_original:\n")
+str(test_data_original)
+```
+
+## Xây dựng Recipe thống nhất
+
+Tạo một recipe chung để xử lý dữ liệu, áp dụng SMOTE, và xử lý các biến phân loại một cách nhất quán.
+
+```{r smote-balance}
+set.seed(123)
+main_recipe <- recipe(default.payment.next.month ~ ., data = train_data_original) %>%
+  step_rm(any_of(c("ID"))) %>% # Loại bỏ cột ID nếu có
+  step_novel(all_nominal_predictors(), -all_outcomes()) %>% # Xử lý các level mới trong test
+  step_dummy(all_nominal_predictors(), -all_outcomes(), one_hot = TRUE) %>% # One-hot encoding
+  step_zv(all_predictors()) %>% # Loại bỏ các biến có variance bằng 0
+  step_normalize(all_numeric_predictors()) %>% # Chuẩn hóa các biến số
+  step_smote(default.payment.next.month, over_ratio = 1) # Cân bằng dữ liệu bằng SMOTE
+
+# Kiểm tra recipe bằng cách prep và bake trên train_data
+train_data_balanced_check <- main_recipe %>%
+  prep() %>%
+  bake(new_data = NULL)
+
+cat("Tỷ lệ default.payment.next.month sau SMOTE (kiểm tra):\n")
+print(table(train_data_balanced_check$default.payment.next.month))
+print(prop.table(table(train_data_balanced_check$default.payment.next.month)))
+```
+
+## Cài đặt Xác thực chéo
+
+Sử dụng xác thực chéo 5 lần để đánh giá hiệu suất mô hình trong quá trình tinh chỉnh. Dữ liệu được sử dụng cho CV là `train_data` (dữ liệu gốc chưa SMOTE), SMOTE sẽ được áp dụng bên trong mỗi fold thông qua recipe.
+
+```{r cv-setup}
+set.seed(123)
+cv_folds <- vfold_cv(train_data_original, v = 5, strata = default.payment.next.month)
+```
+
+## 1. Tinh chỉnh Random Forest
+
+### Siêu tham số
+
+-   `mtry`: Số lượng biến được chọn ngẫu nhiên tại mỗi lần phân tách (mặc định \~ `sqrt(số biến)`).
+-   `trees`: Số lượng cây trong Random Forest.
+-   `min_n`: Số lượng mẫu tối thiểu trong một nút lá.
+
+### Khoảng giá trị
+
+-   `mtry`: Từ `floor(sqrt(ncol(train_data) - 1)) / 2` đến `floor(sqrt(ncol(train_data) - 1)) * 2`.
+-   `trees`: `[500, 1000, 1500]`.
+-   `min_n`: `[5, 10, 20]`.
+
+### Phương pháp
+
+-   **Grid Search**: Thử nghiệm tất cả các tổ hợp trong lưới tham số.
+-   **Số liệu tối ưu hóa**: ROC-AUC.
+
+```{r rf-tuning}
+# Định nghĩa mô hình Random Forest
+rf_model_spec <- rand_forest(
+  mtry = tune(),
+  trees = tune(),
+  min_n = tune()
+) %>%
+  set_engine("randomForest") %>%
+  set_mode("classification")
+
+# Tạo lưới tham số
+num_features <- length(all_numeric_predictors() %>% 
+                       select(train_data_original, .) %>% 
+                       names()) + 
+                length(all_nominal_predictors() %>% 
+                       select(train_data_original, .) %>% 
+                       names()) * 2 # Giả sử mỗi biến phân loại tạo 2 dummy variables
+mtry_low <- max(1, floor(sqrt(num_features)))
+mtry_high <- min(num_features, floor(sqrt(num_features) * 1.5))
+
+rf_grid <- grid_regular(
+  mtry(range = c(mtry_low, mtry_high)),
+  trees(range = c(500L, 1000L)),
+  min_n(range = c(5L, 15L)),
+  levels = c(mtry = 2, trees = 2, min_n = 2)
+)
+
+# Workflow cho Random Forest
+rf_workflow <- workflow() %>%
+  add_model(rf_model_spec) %>%
+  add_recipe(main_recipe)
+
+# Tinh chỉnh với Grid Search
+set.seed(123)
+rf_tune_results <- tune_grid(
+  rf_workflow,
+  resamples = cv_folds,
+  grid = rf_grid,
+  metrics = metric_set(roc_auc),
+  control = control_grid(save_pred = TRUE, verbose = TRUE)
+)
+
+cat("\nKết quả tinh chỉnh Random Forest (5 kết quả tốt nhất theo ROC-AUC):\n")
+show_best(rf_tune_results, metric = "roc_auc", n = 5) %>% kable(caption = "Top 5 siêu tham số Random Forest")
+
+# Chọn mô hình tốt nhất
+best_rf_params <- select_best(rf_tune_results, metric = "roc_auc")
+cat("\nSiêu tham số tốt nhất cho Random Forest:\n")
+print(best_rf_params)
+```
+
+### Lưu mô hình Random Forest tốt nhất
+
+```{r rf-save-model}
+# Finalize workflow với siêu tham số tốt nhất
+final_rf_workflow <- finalize_workflow(rf_workflow, best_rf_params)
+
+# Fit mô hình trên toàn bộ tập huấn luyện
+set.seed(123)
+final_rf_model <- fit(final_rf_workflow, data = train_data_original)
+
+# Lưu mô hình
+saveRDS(final_rf_model, paste0(MODELS_DIR, "random_forest_tuned_final.rds"))
+cat("Đã lưu mô hình Random Forest tinh chỉnh vào:", paste0(MODELS_DIR, "random_forest_tuned_final.rds"), "\n")
+```
+
+## 2. Tinh chỉnh XGBoost
+
+### Siêu tham số
+
+-   `mtry`: Tỷ lệ cột được chọn ngẫu nhiên (`colsample_bytree`).
+-   `trees`: Số lượng cây (`nrounds`).
+-   `min_n`: Số lượng mẫu tối thiểu trong một nút (`min_child_weight`).
+-   `learn_rate`: Tốc độ học (`eta`).
+-   `tree_depth`: Độ sâu tối đa của cây.
+-   `sample_size`: Tỷ lệ mẫu được sử dụng trên mỗi vòng (`subsample`).
+
+### Khoảng giá trị
+
+-   `mtry`: `[0.6, 0.8, 1.0]` (tương ứng `colsample_bytree`)
+-   `trees`: `[100, 500, 1000]`
+-   `min_n`: `[1, 5, 10]`
+-   `learn_rate`: `[0.01, 0.1, 0.3]`
+-   `tree_depth`: `[3, 6, 9]`
+-   `sample_size`: `[0.6, 0.8, 1.0]` (tương ứng `subsample`)
+
+### Phương pháp
+
+-   **Random Search**: Thử 20 tổ hợp ngẫu nhiên để tiết kiệm thời gian do không gian tham số lớn.
+-   **Số liệu tối ưu hóa**: ROC-AUC.
+
+```{r xgb-tuning}
+# Định nghĩa mô hình XGBoost
+xgb_model_spec <- boost_tree(
+  mtry = tune(),
+  trees = tune(),
+  min_n = tune(),
+  learn_rate = tune(),
+  tree_depth = tune(),
+  sample_size = tune()
+) %>%
+  set_engine("xgboost") %>%
+  set_mode("classification")
+
+# Tạo lưới ngẫu nhiên
+set.seed(456)
+xgb_grid <- grid_random(
+  mtry(range = c(max(1L, floor(0.7 * num_features)), num_features)),
+  trees(range = c(100L, 500L)),
+  min_n(range = c(1L, 5L)),
+  learn_rate(range = c(0.01, 0.3)),
+  tree_depth(range = c(3L, 6L)),
+  sample_prop(range = c(0.7, 1.0)),
+  size = 10
+)
+
+# Workflow cho XGBoost
+xgb_workflow <- workflow() %>%
+  add_model(xgb_model_spec) %>%
+  add_recipe(main_recipe)
+
+# Tinh chỉnh với Random Search
+set.seed(123)
+xgb_tune_results <- tune_grid(
+  xgb_workflow,
+  resamples = cv_folds,
+  grid = xgb_grid,
+  metrics = metric_set(roc_auc),
+  control = control_grid(save_pred = TRUE, verbose = TRUE)
+)
+
+cat("\nKết quả tinh chỉnh XGBoost (5 kết quả tốt nhất theo ROC-AUC):\n")
+show_best(xgb_tune_results, metric = "roc_auc", n = 5) %>% kable(caption = "Top 5 siêu tham số XGBoost")
+
+# Chọn mô hình tốt nhất
+best_xgb_params <- select_best(xgb_tune_results, metric = "roc_auc")
+cat("\nSiêu tham số tốt nhất cho XGBoost:\n")
+print(best_xgb_params)
+```
+
+### Lưu mô hình XGBoost tốt nhất
+
+```{r xgb-save-model}
+# Finalize workflow với siêu tham số tốt nhất
+final_xgb_workflow <- finalize_workflow(xgb_workflow, best_xgb_params)
+
+# Fit mô hình trên toàn bộ tập huấn luyện
+set.seed(123)
+final_xgb_model <- fit(final_xgb_workflow, data = train_data_original)
+
+# Lưu mô hình
+saveRDS(final_xgb_model, paste0(MODELS_DIR, "xgboost_tuned_final.rds"))
+cat("Đã lưu mô hình XGBoost tinh chỉnh vào:", paste0(MODELS_DIR, "xgboost_tuned_final.rds"), "\n")
+```
+
+## Đánh giá mô hình đã tinh chỉnh trên tập kiểm tra
+
+So sánh hiệu suất của Random Forest và XGBoost đã tinh chỉnh với Logistic Regression (giả sử mô hình này đã được huấn luyện và lưu từ file `05_model_training.R`).
+
+```{r model-evaluation}
+# Tạo và lưu mô hình Logistic Regression
+lr_recipe <- recipe(default.payment.next.month ~ ., data = train_data_original) %>%
+  step_rm(any_of(c("ID"))) %>%
+  step_novel(all_nominal_predictors(), -all_outcomes()) %>%
+  step_dummy(all_nominal_predictors(), -all_outcomes(), one_hot = TRUE) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_numeric_predictors()) %>%
+  step_smote(default.payment.next.month, over_ratio = 1)
+
+lr_spec <- logistic_reg() %>% set_engine("glm")
+lr_workflow <- workflow() %>% add_recipe(lr_recipe) %>% add_model(lr_spec)
+model_lr_fitted <- fit(lr_workflow, data = train_data_original)
+saveRDS(model_lr_fitted, paste0(MODELS_DIR, "logistic_regression_final.rds"))
+
+# Dự đoán trên tập kiểm tra
+rf_pred_prob <- predict(final_rf_model, test_data_original, type = "prob")$.pred_1
+rf_pred_class <- predict(final_rf_model, test_data_original)$.pred_class
+rf_roc <- roc(response = test_data_original$default.payment.next.month, 
+              predictor = rf_pred_prob, 
+              levels = levels(test_data_original$default.payment.next.month))
+rf_conf_matrix <- confusionMatrix(rf_pred_class, test_data_original$default.payment.next.month, positive = "1")
+
+xgb_pred_prob <- predict(final_xgb_model, test_data_original, type = "prob")$.pred_1
+xgb_pred_class <- predict(final_xgb_model, test_data_original)$.pred_class
+xgb_roc <- roc(response = test_data_original$default.payment.next.month, 
+               predictor = xgb_pred_prob,
+               levels = levels(test_data_original$default.payment.next.month))
+xgb_conf_matrix <- confusionMatrix(xgb_pred_class, test_data_original$default.payment.next.month, positive = "1")
+
+lr_pred_prob <- predict(model_lr_fitted, test_data_original, type = "prob")$.pred_1
+lr_pred_class <- predict(model_lr_fitted, test_data_original)$.pred_class
+lr_roc <- roc(response = test_data_original$default.payment.next.month, 
+              predictor = lr_pred_prob,
+              levels = levels(test_data_original$default.payment.next.month))
+lr_conf_matrix <- confusionMatrix(lr_pred_class, test_data_original$default.payment.next.month, positive = "1")
+
+# Tạo bảng tổng hợp hiệu suất
+performance_summary_tuned <- data.frame(
+  Model = c("Logistic Regression", "Random Forest (Tuned)", "XGBoost (Tuned)"),
+  Accuracy = c(lr_conf_matrix$overall["Accuracy"], rf_conf_matrix$overall["Accuracy"], xgb_conf_matrix$overall["Accuracy"]),
+  Precision = c(lr_conf_matrix$byClass["Precision"], rf_conf_matrix$byClass["Precision"], xgb_conf_matrix$byClass["Precision"]),
+  Recall = c(lr_conf_matrix$byClass["Recall"], rf_conf_matrix$byClass["Recall"], xgb_conf_matrix$byClass["Recall"]),
+  F1 = c(lr_conf_matrix$byClass["F1"], rf_conf_matrix$byClass["F1"], xgb_conf_matrix$byClass["F1"]),
+  AUC = c(as.numeric(auc(lr_roc)), as.numeric(auc(rf_roc)), as.numeric(auc(xgb_roc)))
+)
+
+cat("\nTổng hợp hiệu suất các mô hình trên tập kiểm tra:\n")
+kable(performance_summary_tuned, caption = "Tổng hợp hiệu suất các mô hình (đã tinh chỉnh)", digits = 4)
+
+write.csv(performance_summary_tuned, 
+          paste0(RESULTS_DIR, "model_performance/performance_metrics_tuned_summary.csv"), 
+          row.names = FALSE)
+cat("\nĐã lưu bảng tổng hợp hiệu suất vào:", 
+    paste0(RESULTS_DIR, "model_performance/performance_metrics_tuned_summary.csv"), "\n")
+```
+
+## Trực quan hóa Đường cong ROC
+
+```{r roc-curves-plot, fig.cap="So sánh đường cong ROC của các mô hình đã tinh chỉnh"}
+# Sử dụng ggplot2 để vẽ đẹp hơn nếu muốn, ở đây dùng plot cơ bản
+png(paste0(RESULTS_DIR, "model_performance/roc_curves_tuned_comparison.png"), width = 800, height = 600)
+plot(lr_roc, col = "blue", main = "So sánh ROC Curves (Mô hình đã Tinh chỉnh)", legacy.axes = TRUE)
+plot(rf_roc, col = "green", add = TRUE)
+plot(xgb_roc, col = "red", add = TRUE)
+legend("bottomright", 
+       legend = c(paste0("Logistic Regression (AUC: ", sprintf("%.3f", auc(lr_roc)), ")"),
+                  paste0("Random Forest Tuned (AUC: ", sprintf("%.3f", auc(rf_roc)), ")"),
+                  paste0("XGBoost Tuned (AUC: ", sprintf("%.3f", auc(xgb_roc)), ")")
+       ),
+       col = c("blue", "green", "red"), 
+       lty = 1, lwd = 2, cex = 0.9)
+dev.off()
+
+cat("Đã lưu biểu đồ ROC vào:", 
+    paste0(RESULTS_DIR, "model_performance/roc_curves_tuned_comparison.png"), "\n")
+
+# Hiển thị lại trong RMarkdown output (nếu chạy interactive)
+# Hoặc dùng lại code plot không qua png() để hiển thị trực tiếp
+plot(lr_roc, col = "blue", main = "So sánh ROC Curves (Mô hình đã Tinh chỉnh)", legacy.axes = TRUE)
+plot(rf_roc, col = "green", add = TRUE)
+plot(xgb_roc, col = "red", add = TRUE)
+legend("bottomright", 
+       legend = c(paste0("Logistic Regression (AUC: ", sprintf("%.3f", auc(lr_roc)), ")"),
+                  paste0("Random Forest Tuned (AUC: ", sprintf("%.3f", auc(rf_roc)), ")"),
+                  paste0("XGBoost Tuned (AUC: ", sprintf("%.3f", auc(xgb_roc)), ")")
+       ),
+       col = c("blue", "green", "red"), 
+       lty = 1, lwd = 2, cex = 0.9)
+
+```
+
+## Kết luận
+
+-   **Random Forest**: Tinh chỉnh tập trung vào `mtry`, `trees`, và `min_n`. Grid Search đã giúp tìm ra các giá trị tối ưu, cải thiện ROC-AUC so với mô hình mặc định (nếu có so sánh).
+-   **XGBoost**: Random Search được sử dụng với không gian tham số lớn hơn. Các tham số như `learn_rate`, `tree_depth`, và `sample_size` được tối ưu hóa để cân bằng giữa tốc độ học và sự phức tạp của mô hình.
+-   **So sánh**: Dựa trên bảng tổng hợp hiệu suất và đường cong ROC, chúng ta có thể xác định mô hình nào hoạt động tốt nhất trên tập kiểm tra. Thông thường, XGBoost (đã tinh chỉnh) có khả năng cho AUC cao hơn nhờ khả năng xử lý dữ liệu phức tạp và cơ chế boosting. Kết quả cụ thể phụ thuộc vào dữ liệu và quá trình tinh chỉnh.

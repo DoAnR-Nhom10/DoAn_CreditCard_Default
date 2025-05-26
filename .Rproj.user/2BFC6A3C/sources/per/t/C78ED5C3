@@ -1,0 +1,27 @@
+{
+    "id": "C78ED5C3",
+    "path": "D:/Documents/Lập Trình R Cho Phân Tích Dữ Liệu/DoAn_CreditCard_Default/1_Scripts/07_model_evaluation.Rmd",
+    "project_path": "1_Scripts/07_model_evaluation.Rmd",
+    "type": "r_markdown",
+    "hash": "3718328490",
+    "contents": "",
+    "dirty": false,
+    "created": 1747967151009.0,
+    "source_on_save": false,
+    "relative_order": 9,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "360,3",
+        "scrollLine": "0",
+        "last_setup_crc32": ""
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1747978501,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1747978501583,
+    "read_only": false,
+    "read_only_alternatives": []
+}

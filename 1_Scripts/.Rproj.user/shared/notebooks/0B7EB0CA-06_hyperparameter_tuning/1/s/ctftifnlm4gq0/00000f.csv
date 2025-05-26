@@ -1,0 +1,2 @@
+"0","set.seed(123)"
+"0","cv_folds <- vfold_cv(train_data_original, v = 5, strata = default.payment.next.month)"

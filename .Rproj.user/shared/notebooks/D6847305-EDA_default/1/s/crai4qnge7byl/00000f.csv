@@ -1,0 +1,32 @@
+"0","cat(""Tần suất SEX:\n"")"
+"1","Tần suất SEX:
+"
+"0","table(data_clean$SEX)"
+"1","
+    1     2 
+11888 18112 
+"
+"0","cat(""Tần suất EDUCATION:\n"")"
+"1","Tần suất EDUCATION:
+"
+"0","table(data_clean$EDUCATION)"
+"1","
+    1     2     3     4 
+10585 14030  4917   468 
+"
+"0","cat(""Tần suất MARRIAGE:\n"")"
+"1","Tần suất MARRIAGE:
+"
+"0","table(data_clean$MARRIAGE)"
+"1","
+    1     2     3 
+13659 15964   377 
+"
+"0","cat(""Tỷ lệ vỡ nợ (default.payment.next.month):\n"")"
+"1","Tỷ lệ vỡ nợ (default.payment.next.month):
+"
+"0","prop.table(table(data_clean$default.payment.next.month))"
+"1","
+     0      1 
+0.7788 0.2212 
+"

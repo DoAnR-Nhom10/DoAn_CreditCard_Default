@@ -1,0 +1,12 @@
+"0","# Finalize workflow với siêu tham số tốt nhất"
+"0","final_xgb_workflow <- finalize_workflow(xgb_workflow, best_xgb_params)"
+"0",""
+"0","# Fit mô hình trên toàn bộ tập huấn luyện"
+"0","set.seed(123)"
+"0","final_xgb_model <- fit(final_xgb_workflow, data = train_data_original)"
+"0",""
+"0","# Lưu mô hình"
+"0","saveRDS(final_xgb_model, paste0(MODELS_DIR, ""xgboost_tuned_final.rds""))"
+"0","cat(""Đã lưu mô hình XGBoost tinh chỉnh vào:"", paste0(MODELS_DIR, ""xgboost_tuned_final.rds""), ""\n"")"
+"1","Đã lưu mô hình XGBoost tinh chỉnh vào: ../2_Models/xgboost_tuned_final.rds 
+"

@@ -1,0 +1,7 @@
+"0","# Tạo một grid tổng hợp mới cho file lưu cuối cùng"
+"0","final_eda_plot_grid <- grid.arrange("
+"0","  p1_limit_hist, p_age_hist, "
+"0","  p7_limit_default, p8_age_default, "
+"0","  p9_edu_default, p14_edu_sex_default, "
+"0","  ncol = 2"
+"0",")"

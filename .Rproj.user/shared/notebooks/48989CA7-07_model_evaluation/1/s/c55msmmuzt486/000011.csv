@@ -1,0 +1,13 @@
+"1","NULL
+"
+"0","print_cm(cm_rf, ""Random Forest (Tuned)"")"
+"1","
+Ma trận nhầm lẫn cho: Random Forest (Tuned) 
+ Accuracy: 0.5833 
+ Kappa: -0.1574 
+ Sensitivity (Recall for class 1): 0.1212 
+ Specificity (Recall for class 0): 0.7137 
+ Precision (for class 1): 0.1067 
+ F1-Score (for class 1): 0.1135 
+ Balanced Accuracy: 0.4174 
+"
